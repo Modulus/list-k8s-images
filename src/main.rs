@@ -24,7 +24,14 @@ async fn main() -> Result<(), kube::Error> {
 
     println!("Deploymens in the cluster in ns odm-test");
     for deploy in deployments {
-        println!("{:?}", deploy.metadata.name.unwrap());
+        match deploy.metadata.name {
+            Some(name)  => {
+                println!("{:?}", name);
+            }
+            _ => {
+                println!("No name found");
+            },
+        }
     }
 
     Ok(())
