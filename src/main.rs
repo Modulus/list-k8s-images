@@ -1,4 +1,4 @@
-use k8s_openapi::{api::{apps::v1::Deployment, core::v1::Pod}, serde::de};
+use k8s_openapi::api::{apps::v1::Deployment, core::v1::Pod};
 use kube::api::{Api, ListParams, ObjectList};
 #[tokio::main]
 async fn main() -> Result<(), kube::Error> {
@@ -26,9 +26,6 @@ async fn main() -> Result<(), kube::Error> {
     for deploy in deployments {
         println!("{:?}", deploy.metadata.name.unwrap());
     }
-
-
-
 
     Ok(())
 }
