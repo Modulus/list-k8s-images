@@ -1,0 +1,9 @@
+[package]
+name = "kube-rs-play"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+k8s-openapi = { version = "0.24.0", features = ["latest"] }
+kube = { version = "0.98.0", features = ["derive", "runtime"] }
+tokio = { version = "1.43.0", features = ["full"] }
