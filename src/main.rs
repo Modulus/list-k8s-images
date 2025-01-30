@@ -35,10 +35,10 @@ async fn main() -> Result<(), kube::Error> {
             println!("\tContainer: {:?}", container.name);
             println!("\tImage: {:?}", container.image.unwrap());
         }
-        println!("\n\n");
+        println!("\n");
     }
 
-    println!("\n\n");
+    println!("\n");
 
 
     Ok(())
