@@ -29,16 +29,13 @@ async fn main() -> Result<(), kube::Error> {
     // println!("{:?}", pods);
     println!("Pods in the cluster in ns {}", args.namespace);
     for pod in pods {
-        println!("==========================");
-        println!("Details for pod:");
-        println!("{:?}", pod.metadata.name.unwrap());
+        println!("Pod: {:?}", pod.metadata.name.unwrap());
 
         for container in pod.spec.unwrap().containers {
-            println!("Container: {:?}", container.name);
-            println!("Image: {:?}", container.image.unwrap());
+            println!("\tContainer: {:?}", container.name);
+            println!("\tImage: {:?}", container.image.unwrap());
         }
-
-        println!("==========================\n\n");
+        println!("\n\n");
     }
 
     println!("\n\n");

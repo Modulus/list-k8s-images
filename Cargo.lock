@@ -853,16 +853,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "k8s-images"
-version = "0.1.0"
-dependencies = [
- "clap",
- "k8s-openapi",
- "kube",
- "tokio",
-]
-
-[[package]]
 name = "k8s-openapi"
 version = "0.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -991,6 +981,16 @@ name = "libc"
 version = "0.2.169"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5aba8db14291edd000dfcc4d620c7ebfb122c613afb886ca8803fa4e128a20a"
+
+[[package]]
+name = "list-k8s-images"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "k8s-openapi",
+ "kube",
+ "tokio",
+]
 
 [[package]]
 name = "lock_api"
