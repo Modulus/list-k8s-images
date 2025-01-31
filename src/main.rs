@@ -1,8 +1,10 @@
 use k8s_openapi::api::core::v1::Pod;
 use kube::api::{Api, ListParams, ObjectList};
-use kube::{client::ConfigExt, Client, Config};
+use kube::Client;
 
 use clap::{Parser, ValueEnum};
+use serde::{Deserialize, Serialize};
+
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -12,12 +14,26 @@ struct Args {
     // #[arg(short, long)]
     // label: String,
     #[arg(short, long, default_value = "plain")]
-    output: Option<Output>
+    output: Option<Output>,
+
+    #[arg(short, long, default_value = "false")]
+    verbose: bool
 }
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 enum Output {
     Plain,
     Json,
+}
+#[derive(Serialize, Deserialize)]
+struct ContainerInfoCompact {
+    name: String,
+    image: String
+}
+
+#[derive(Serialize, Deserialize)]
+struct PodInfoCompact {
+    pod: String,
+    containers: Vec<ContainerInfoCompact>
 }
 
 
@@ -40,21 +56,62 @@ async fn main() -> Result<(), kube::Error> {
     println!("Namespace: {:?}", namespace);
 
     let ns: Api<Pod> = Api::namespaced(client.clone(), &namespace);
-    // let params = ListParams::default().labels("app.kubernetes.io/instance=odm-test");
-    let params = ListParams::default();
-    let pods :ObjectList<Pod> = ns.list(&params).await?;
 
-    if let Some(Output::Plain) = args.output {
-        print_plain_pods(pods).await;
-    } else {
-        let json = serde_json::to_string(&pods).unwrap();
-        println!("{json}")
+    match ns.list(&ListParams::default()).await {
+        Ok(pods) => {
+            if let Some(Output::Plain) = args.output {
+                if args.verbose { 
+                    eprintln!("Verbose mode not supported for plain output. Printing plain pods");
+                  }
+
+                print_plain_pods(pods).await;
+
+            } else {
+                if args.verbose {
+                    println!("Verbose mode");
+                    let pretty = serde_json::to_string_pretty(&pods).unwrap_or("Could not convert".into());
+                    println!("{}", pretty);
+                }
+                else {
+                    let compact = convert_pods_to_compact(pods).await;
+                    let pretty = serde_json::to_string_pretty(&compact).unwrap_or("Could not convert".into());
+                    println!("{}", pretty);
+                }
+
+            }
+        },
+        Err(e) => {
+            println!("Error: {:?}", e);
+        }
     }
+
+
 
 
     Ok(())
 }
 
+
+async fn convert_pods_to_compact(pods: ObjectList<Pod>) -> Vec<PodInfoCompact> {
+    let mut pod_info_compact: Vec<PodInfoCompact> = Vec::new();
+
+    for pod in pods {
+        let mut container_info_compact: Vec<ContainerInfoCompact> = Vec::new();
+        for container in pod.spec.unwrap().containers {
+            container_info_compact.push(ContainerInfoCompact {
+                name: container.name,
+                image: container.image.unwrap()
+            });
+        }
+
+        pod_info_compact.push(PodInfoCompact {
+            pod: pod.metadata.name.unwrap(),
+            containers: container_info_compact
+        });
+    }
+
+    return pod_info_compact;
+}
 
 async fn print_plain_pods(pods: ObjectList<Pod>) {
     for pod in pods {
