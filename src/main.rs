@@ -1,6 +1,6 @@
 use k8s_openapi::api::core::v1::Pod;
 use kube::api::{Api, ListParams, ObjectList};
-
+use kube::{client::ConfigExt, Client, Config};
 
 use clap::{Parser, ValueEnum};
 
@@ -8,7 +8,7 @@ use clap::{Parser, ValueEnum};
 #[command(version, about, long_about = None)]
 struct Args {
     #[arg(short, long)]
-    namespace: String,
+    namespace: Option<String>,
     // #[arg(short, long)]
     // label: String,
     #[arg(short, long, default_value = "plain")]
@@ -20,16 +20,26 @@ enum Output {
     Json,
 }
 
+
+fn get_namespace(ns_arg : Option<String>, client: Client) -> String {
+    if let Some(namespace) = ns_arg {
+        return namespace;
+    } else {
+        return client.default_namespace().into();
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), kube::Error> {
 
     let args = Args::parse();
 
-    println!("Namespace: {:?}", args.namespace);
-
     let client = kube::Client::try_default().await?;
 
-    let ns: Api<Pod> = Api::namespaced(client.clone(), &args.namespace);
+    let namespace = get_namespace(args.namespace, client.clone());
+    println!("Namespace: {:?}", namespace);
+
+    let ns: Api<Pod> = Api::namespaced(client.clone(), &namespace);
     // let params = ListParams::default().labels("app.kubernetes.io/instance=odm-test");
     let params = ListParams::default();
     let pods :ObjectList<Pod> = ns.list(&params).await?;
@@ -58,4 +68,19 @@ async fn print_plain_pods(pods: ObjectList<Pod>) {
     }
 
     println!("\n");
+}
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[tokio::test]
+    async fn get_namespace_has_option_set_returns_this_value() {
+
+        let ns = Some("superawsome".to_string());
+        let client = kube::Client::try_default().await.unwrap();
+        let result = get_namespace(ns, client);
+        assert_eq!("superawsome", result);
+    }
 }
