@@ -1,7 +1,8 @@
-use k8s_openapi::api::{apps::v1::Deployment, core::v1::Pod};
-use kube::{api::{Api, ListParams, ObjectList}, core::params};
+use k8s_openapi::api::core::v1::Pod;
+use kube::api::{Api, ListParams, ObjectList};
 
-use clap::Parser;
+
+use clap::{Parser, ValueEnum};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -10,6 +11,13 @@ struct Args {
     namespace: String,
     // #[arg(short, long)]
     // label: String,
+    #[arg(short, long, default_value = "plain")]
+    output: Option<Output>
+}
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum Output {
+    Plain,
+    Json,
 }
 
 #[tokio::main]
@@ -26,8 +34,19 @@ async fn main() -> Result<(), kube::Error> {
     let params = ListParams::default();
     let pods :ObjectList<Pod> = ns.list(&params).await?;
 
-    // println!("{:?}", pods);
-    println!("Pods in the cluster in ns {}", args.namespace);
+    if let Some(Output::Plain) = args.output {
+        print_plain_pods(pods).await;
+    } else {
+        let json = serde_json::to_string(&pods).unwrap();
+        println!("{json}")
+    }
+
+
+    Ok(())
+}
+
+
+async fn print_plain_pods(pods: ObjectList<Pod>) {
     for pod in pods {
         println!("Pod: {:?}", pod.metadata.name.unwrap());
 
@@ -39,7 +58,4 @@ async fn main() -> Result<(), kube::Error> {
     }
 
     println!("\n");
-
-
-    Ok(())
 }
